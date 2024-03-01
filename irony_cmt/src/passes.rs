@@ -358,6 +358,7 @@ impl PassTrait<(), ()> for RemoveSelectPass {
             };
 
             let mut last = default;
+            let mut mux_i = 0;
             for (cond, value) in conds.iter().zip(values.iter()).rev() {
               let cond = cond.to_owned().expect("must be Some");
               let value = value.to_owned().expect("must be Some");
@@ -388,7 +389,7 @@ impl PassTrait<(), ()> for RemoveSelectPass {
                 {
                   let mut wire = IRWire::new(
                     data_type,
-                    Some((name + "_mux").into()),
+                    Some((name + "_mux" + &mux_i.to_string()).into()),
                     Some(debug),
                     Some(location),
                   );
@@ -415,7 +416,8 @@ impl PassTrait<(), ()> for RemoveSelectPass {
               );
 
               new_included_op.push(mux_op);
-
+              mux_i += 1;
+              
               last = mux_wire;
             }
 
