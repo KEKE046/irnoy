@@ -116,6 +116,10 @@ impl PassTrait<(), ()> for RemoveEventPass {
       }
     }
 
+    // for (wire_id, _) in &wire_to_be_selected_table {
+    //   println!("{:?}", env.get_entity(wire_id.to_owned()).get_attr("name").unwrap());
+    // }
+
     for (event, signals) in event_signal_mapping.into_iter() {
       let source_signals: Vec<_> = signals
         .to_owned()
@@ -159,8 +163,8 @@ impl PassTrait<(), ()> for RemoveEventPass {
           env.delete_op(op_id.to_owned());
         },
         OpEnum::TmpWhen(TmpWhen { cond: Some(cond), body: Some(body), .. }) => {
-          let body = env.get_region(body.to_owned()).op_children.to_owned();
-          for op_id in body {
+          let body_op = env.get_region(body.to_owned()).op_children.to_owned();
+          for op_id in body_op {
             let defs = env
               .get_op(op_id)
               .get_defs()
@@ -173,13 +177,13 @@ impl PassTrait<(), ()> for RemoveEventPass {
               wire_guarded_table.insert(def.to_owned(), cond.to_owned());
               // let times_be_used = env.get_uses(def.to_owned()).len();
 
-              let times_be_used_outside = 0;
-              // for use_id in env.get_uses(def.to_owned()) {
-              //   let use_op = env.get_op(use_id);
-              //   if use_op.get_regions().len() == 0 {
-              //     times_be_used_outside += 1;
-              //   }
-              // }
+              let mut times_be_used_outside = 0;
+              for use_id in env.get_uses(def.to_owned()) {
+                let use_op = env.get_op(use_id);
+                if use_op.get_parent() != Some(body.to_owned()) {
+                  times_be_used_outside += 1;
+                }
+              }
 
               let times_to_be_selected = wire_to_be_selected_table
                 .get(&def)
